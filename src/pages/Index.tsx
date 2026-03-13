@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { EmailCaptureModal } from "@/components/EmailCaptureModal";
 import { Footer } from "@/components/Footer";
 import { isValidSolanaAddress } from "@/lib/constants";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield } from "lucide-react";
 
 const Index = () => {
@@ -14,6 +15,7 @@ const Index = () => {
   const [error, setError] = useState("");
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [submittedAddress, setSubmittedAddress] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const utm_source = searchParams.get("utm_source") || undefined;
   const utm_campaign = searchParams.get("utm_campaign") || undefined;
@@ -29,18 +31,27 @@ const Index = () => {
     setShowEmailModal(true);
   };
 
-  const handleEmailSubmit = (email: string) => {
-    // Store lead — in production this would go to Supabase
-    console.log("Lead captured:", { email, wallet_address: submittedAddress, utm_source, utm_campaign });
+  const handleEmailSubmit = async (email: string) => {
+    setLoading(true);
+    try {
+      // Store lead in Supabase
+      await supabase.from("leads").insert({
+        email,
+        wallet_address: submittedAddress,
+        utm_source: utm_source || null,
+        utm_campaign: utm_campaign || null,
+      });
+    } catch (e) {
+      console.error("Failed to store lead:", e);
+    }
+    setLoading(false);
     navigate(`/results?address=${encodeURIComponent(submittedAddress)}&email=${encodeURIComponent(email)}`);
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      {/* Hero */}
       <main className="flex-1 flex items-center justify-center px-4 py-16 md:py-24">
         <div className="max-w-2xl w-full text-center space-y-8">
-          {/* Logo / Brand */}
           <div className="flex items-center justify-center gap-2 mb-2">
             <Shield className="w-8 h-8 text-neon-teal" />
             <span className="text-xl font-bold text-gradient-teal-pink">ClearSignal</span>
@@ -59,7 +70,6 @@ const Index = () => {
             <span className="text-tag-exit font-medium">Exit</span> – in under 10 seconds.
           </p>
 
-          {/* Wallet input */}
           <div className="max-w-md mx-auto space-y-4">
             <div className="flex gap-2">
               <Input
@@ -90,7 +100,6 @@ const Index = () => {
               variant="hero-outline"
               className="w-full"
               onClick={() => {
-                // Placeholder for Solana wallet adapter
                 alert("Phantom wallet connection coming soon! For now, paste your address above.");
               }}
             >
@@ -109,6 +118,7 @@ const Index = () => {
         open={showEmailModal}
         onSubmit={handleEmailSubmit}
         onClose={() => setShowEmailModal(false)}
+        loading={loading}
       />
 
       <Footer />
