@@ -7,7 +7,7 @@ import { UpsellPanel } from "@/components/UpsellPanel";
 import { Footer } from "@/components/Footer";
 import { shortAddress } from "@/lib/constants";
 import type { WalletCheckResult } from "@/lib/constants";
-import { supabase } from "@/integrations/supabase/client";
+
 import { Shield, ArrowLeft, AlertTriangle } from "lucide-react";
 
 const Results = () => {
