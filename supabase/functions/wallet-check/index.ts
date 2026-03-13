@@ -88,9 +88,16 @@ serve(async (req) => {
         );
         if (resp.ok) {
           data = await resp.json();
+        } else if (resp.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "rate_limited", message: "Too many requests. Please try again later." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          console.error("ClearSignal API error:", resp.status, await resp.text().catch(() => ""));
         }
-      } catch {
-        // Fall through to mock
+      } catch (e) {
+        console.error("ClearSignal API fetch failed:", e);
       }
     }
 
@@ -110,7 +117,15 @@ serve(async (req) => {
         total_balance_usd: data.total_balance_usd,
         risk_score: data.risk_score,
         risk_level: data.risk_level,
-        summary: { coins_count: data.coins.length },
+        summary: data.summary || {
+          num_coins: data.coins?.length || 0,
+          percent_high_risk_usd: data.coins
+            ? data.coins.filter((c: any) => c.tag === "AVOID" || c.tag === "EXIT").reduce((s: number, c: any) => s + c.usd_value, 0) / (data.total_balance_usd || 1)
+            : 0,
+          top_risky_coins: data.coins
+            ? data.coins.filter((c: any) => c.tag === "AVOID" || c.tag === "EXIT").slice(0, 3).map((c: any) => c.symbol)
+            : [],
+        },
       });
     } catch (e) {
       console.error("Failed to store wallet check:", e);

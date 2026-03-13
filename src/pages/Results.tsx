@@ -64,17 +64,19 @@ const Results = () => {
     );
   }
 
-  const riskyCoins = data?.coins
-    .filter((c) => c.tag === "AVOID" || c.tag === "EXIT")
-    .sort((a, b) => b.usd_value - a.usd_value)
-    .slice(0, 3);
-
-  const avoidExitValue = data
-    ? data.coins
+  // Use summary.top_risky_coins from API if available, otherwise compute from coins
+  const riskyCoins = data?.summary?.top_risky_coins
+    ? data.coins.filter((c) => data.summary!.top_risky_coins.includes(c.symbol)).slice(0, 3)
+    : data?.coins
         .filter((c) => c.tag === "AVOID" || c.tag === "EXIT")
-        .reduce((s, c) => s + c.usd_value, 0)
-    : 0;
-  const avoidExitPct = data && data.total_balance_usd > 0 ? Math.round((avoidExitValue / data.total_balance_usd) * 100) : 0;
+        .sort((a, b) => b.usd_value - a.usd_value)
+        .slice(0, 3);
+
+  const avoidExitPct = data?.summary?.percent_high_risk_usd != null
+    ? Math.round(data.summary.percent_high_risk_usd * 100)
+    : data && data.total_balance_usd > 0
+      ? Math.round(data.coins.filter((c) => c.tag === "AVOID" || c.tag === "EXIT").reduce((s, c) => s + c.usd_value, 0) / data.total_balance_usd * 100)
+      : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
