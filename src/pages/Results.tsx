@@ -23,14 +23,6 @@ const Results = () => {
 
     const fetchData = async () => {
       try {
-        const { data: result, error: fnError } = await supabase.functions.invoke("wallet-check", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-          body: null,
-        });
-
-        // supabase.functions.invoke doesn't support query params well, so use fetch directly
-        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
         
@@ -49,7 +41,6 @@ const Results = () => {
         setData(json);
       } catch (e) {
         console.error("Failed to fetch wallet check:", e);
-        // Fallback to mock
         const { generateMockWalletCheck } = await import("@/lib/mock-wallet");
         setData(generateMockWalletCheck());
       } finally {
