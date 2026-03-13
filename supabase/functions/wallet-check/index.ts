@@ -88,9 +88,16 @@ serve(async (req) => {
         );
         if (resp.ok) {
           data = await resp.json();
+        } else if (resp.status === 429) {
+          return new Response(
+            JSON.stringify({ error: "rate_limited", message: "Too many requests. Please try again later." }),
+            { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        } else {
+          console.error("ClearSignal API error:", resp.status, await resp.text().catch(() => ""));
         }
-      } catch {
-        // Fall through to mock
+      } catch (e) {
+        console.error("ClearSignal API fetch failed:", e);
       }
     }
 
