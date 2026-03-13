@@ -7,7 +7,7 @@ import { UpsellPanel } from "@/components/UpsellPanel";
 import { Footer } from "@/components/Footer";
 import { shortAddress } from "@/lib/constants";
 import type { WalletCheckResult } from "@/lib/constants";
-import { generateMockWalletCheck } from "@/lib/mock-wallet";
+import { supabase } from "@/integrations/supabase/client";
 import { Shield, ArrowLeft, AlertTriangle } from "lucide-react";
 
 const Results = () => {
@@ -16,15 +16,48 @@ const Results = () => {
   const email = searchParams.get("email") || "";
   const [data, setData] = useState<WalletCheckResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!address) return;
-    // Mock API call — replace with real API when ready
-    const timer = setTimeout(() => {
-      setData(generateMockWalletCheck());
-      setLoading(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+
+    const fetchData = async () => {
+      try {
+        const { data: result, error: fnError } = await supabase.functions.invoke("wallet-check", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+          body: null,
+        });
+
+        // supabase.functions.invoke doesn't support query params well, so use fetch directly
+        const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        
+        const resp = await fetch(
+          `${supabaseUrl}/functions/v1/wallet-check?address=${encodeURIComponent(address)}`,
+          {
+            headers: {
+              "apikey": supabaseKey,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!resp.ok) throw new Error("API error");
+        const json = await resp.json();
+        setData(json);
+      } catch (e) {
+        console.error("Failed to fetch wallet check:", e);
+        // Fallback to mock
+        const { generateMockWalletCheck } = await import("@/lib/mock-wallet");
+        setData(generateMockWalletCheck());
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [address]);
 
   if (!address) {
@@ -50,13 +83,12 @@ const Results = () => {
         .filter((c) => c.tag === "AVOID" || c.tag === "EXIT")
         .reduce((s, c) => s + c.usd_value, 0)
     : 0;
-  const avoidExitPct = data ? Math.round((avoidExitValue / data.total_balance_usd) * 100) : 0;
+  const avoidExitPct = data && data.total_balance_usd > 0 ? Math.round((avoidExitValue / data.total_balance_usd) * 100) : 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 px-4 py-8 md:py-16">
         <div className="container max-w-3xl mx-auto space-y-8">
-          {/* Header */}
           <div className="flex items-center justify-between">
             <Link to="/" className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm transition-colors">
               <ArrowLeft className="w-4 h-4" /> Back
@@ -67,10 +99,8 @@ const Results = () => {
             </div>
           </div>
 
-          {/* Upsell top */}
           {!loading && data && <UpsellPanel address={address} email={email} />}
 
-          {/* Loading state */}
           {loading && (
             <div className="rounded-xl border border-border bg-card p-12 text-center space-y-4">
               <div className="w-16 h-16 mx-auto rounded-full border-2 border-neon-teal border-t-transparent animate-spin" />
@@ -79,10 +109,8 @@ const Results = () => {
             </div>
           )}
 
-          {/* Results */}
           {!loading && data && (
             <>
-              {/* Summary card */}
               <div className="rounded-xl border border-border bg-card p-6 md:p-8 space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
@@ -109,7 +137,6 @@ const Results = () => {
                 </p>
               </div>
 
-              {/* Top risky coins */}
               {riskyCoins && riskyCoins.length > 0 && (
                 <div className="rounded-xl border border-risk-high/30 bg-risk-high/5 p-5 space-y-3">
                   <div className="flex items-center gap-2 text-risk-high font-semibold">
@@ -127,7 +154,6 @@ const Results = () => {
                 </div>
               )}
 
-              {/* Coins table */}
               <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
@@ -159,7 +185,6 @@ const Results = () => {
                 </div>
               </div>
 
-              {/* Upsell bottom */}
               <UpsellPanel address={address} email={email} />
             </>
           )}
