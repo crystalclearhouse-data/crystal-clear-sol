@@ -14,7 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      leads: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          utm_campaign: string | null
+          utm_source: string | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          utm_campaign?: string | null
+          utm_source?: string | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          utm_campaign?: string | null
+          utm_source?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
+      wallet_checks: {
+        Row: {
+          checked_at: string
+          id: string
+          risk_level: Database["public"]["Enums"]["risk_level_enum"] | null
+          risk_score: number | null
+          summary: Json | null
+          total_balance_sol: number | null
+          total_balance_usd: number | null
+          wallet_address: string
+        }
+        Insert: {
+          checked_at?: string
+          id?: string
+          risk_level?: Database["public"]["Enums"]["risk_level_enum"] | null
+          risk_score?: number | null
+          summary?: Json | null
+          total_balance_sol?: number | null
+          total_balance_usd?: number | null
+          wallet_address: string
+        }
+        Update: {
+          checked_at?: string
+          id?: string
+          risk_level?: Database["public"]["Enums"]["risk_level_enum"] | null
+          risk_score?: number | null
+          summary?: Json | null
+          total_balance_sol?: number | null
+          total_balance_usd?: number | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +82,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      risk_level_enum: "low" | "medium" | "high" | "critical"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +209,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      risk_level_enum: ["low", "medium", "high", "critical"],
+    },
   },
 } as const
