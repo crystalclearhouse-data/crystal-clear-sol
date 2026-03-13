@@ -15,15 +15,26 @@ export type CoinTag = "ACCUMULATE" | "HOLD" | "CAUTION" | "AVOID" | "EXIT";
 export interface CoinData {
   symbol: string;
   mint: string;
+  balance?: number;
   usd_value: number;
   coin_score: number;
   tag: CoinTag;
 }
 
+export interface WalletSnapshotSummary {
+  num_coins: number;
+  percent_high_risk_usd: number;
+  top_risky_coins: string[];
+}
+
 export interface WalletCheckResult {
+  chain_id?: string;
+  address?: string;
+  as_of?: string;
   total_balance_sol: number;
   total_balance_usd: number;
   risk_score: number;
   risk_level: RiskLevel;
+  summary?: WalletSnapshotSummary;
   coins: CoinData[];
 }
