@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import { generateMockWalletCheck } from "@/lib/mock-wallet";
 
+/** Matches the SOL/USD rate used in mock-wallet.ts */
+const MOCK_SOL_PRICE_USD = 145;
+
 describe("generateMockWalletCheck", () => {
   it("returns all required fields", () => {
     const result = generateMockWalletCheck();
@@ -48,7 +51,7 @@ describe("generateMockWalletCheck", () => {
 
   it("derives total_balance_sol from total_balance_usd", () => {
     const result = generateMockWalletCheck();
-    const expectedSol = Math.round((result.total_balance_usd / 145) * 1000) / 1000;
+    const expectedSol = Math.round((result.total_balance_usd / MOCK_SOL_PRICE_USD) * 1000) / 1000;
     expect(result.total_balance_sol).toBe(expectedSol);
   });
 
