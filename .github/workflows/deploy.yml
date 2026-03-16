@@ -36,6 +36,9 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+          # Set VITE_CUSTOM_DOMAIN=true in GitHub Secrets once clearsignal.app DNS is pointed here.
+          # This switches the Vite base path from /crystal-clear-sol/ to / for the custom domain.
+          VITE_CUSTOM_DOMAIN: ${{ secrets.VITE_CUSTOM_DOMAIN }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
