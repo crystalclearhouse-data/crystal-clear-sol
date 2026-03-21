@@ -5,7 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: mode === "production" ? "/crystal-clear-sol/" : "/",
+  // Use "/" when a custom domain is configured (VITE_CUSTOM_DOMAIN env var set during CI build),
+  // otherwise fall back to the GitHub Pages repo sub-path for the default *.github.io URL.
+  base: process.env.VITE_CUSTOM_DOMAIN ? "/" : (mode === "production" ? "/crystal-clear-sol/" : "/"),
   server: {
     host: "::",
     port: 8080,

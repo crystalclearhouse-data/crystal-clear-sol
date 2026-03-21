@@ -25,7 +25,11 @@ const Results = () => {
       try {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-        
+
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("Supabase is not configured. Showing sample data.");
+        }
+
         const resp = await fetch(
           `${supabaseUrl}/functions/v1/wallet-check?address=${encodeURIComponent(address)}`,
           {
@@ -36,11 +40,20 @@ const Results = () => {
           }
         );
 
-        if (!resp.ok) throw new Error("API error");
+        if (resp.status === 429) {
+          const body = await resp.json().catch(() => ({}));
+          throw new Error(body.message || "Too many requests. Please try again in a moment.");
+        }
+
+        if (!resp.ok) {
+          throw new Error(`API error (${resp.status}). Showing sample data.`);
+        }
+
         const json = await resp.json();
         setData(json);
       } catch (e) {
         console.error("Failed to fetch wallet check:", e);
+        setError(e instanceof Error ? e.message : "Failed to load wallet data. Showing sample data.");
         const { generateMockWalletCheck } = await import("@/lib/mock-wallet");
         setData(generateMockWalletCheck());
       } finally {
@@ -93,6 +106,13 @@ const Results = () => {
           </div>
 
           {!loading && data && <UpsellPanel address={address} email={email} />}
+
+          {error && !loading && (
+            <div className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4 flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+              <p className="text-sm text-yellow-200">{error}</p>
+            </div>
+          )}
 
           {loading && (
             <div className="rounded-xl border border-border bg-card p-12 text-center space-y-4">

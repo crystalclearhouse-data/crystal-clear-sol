@@ -8,6 +8,18 @@ import { isValidSolanaAddress } from "@/lib/constants";
 import { supabase } from "@/integrations/supabase/client";
 import { Shield } from "lucide-react";
 
+interface PhantomProvider {
+  isPhantom?: boolean;
+  connect: (opts?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey: { toString: () => string } }>;
+  disconnect: () => Promise<void>;
+}
+
+declare global {
+  interface Window {
+    solana?: PhantomProvider;
+  }
+}
+
 const Index = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -16,9 +28,30 @@ const Index = () => {
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [submittedAddress, setSubmittedAddress] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connectingWallet, setConnectingWallet] = useState(false);
 
   const utm_source = searchParams.get("utm_source") || undefined;
   const utm_campaign = searchParams.get("utm_campaign") || undefined;
+
+  const handleConnectPhantom = async () => {
+    const provider = window.solana;
+    if (!provider?.isPhantom) {
+      window.open("https://phantom.app/", "_blank", "noopener,noreferrer");
+      return;
+    }
+    setConnectingWallet(true);
+    try {
+      const resp = await provider.connect();
+      const walletAddress = resp.publicKey.toString();
+      setAddress(walletAddress);
+      setError("");
+    } catch (e) {
+      console.error("Phantom connection failed:", e);
+      setError("Wallet connection was cancelled or failed. Please try again.");
+    } finally {
+      setConnectingWallet(false);
+    }
+  };
 
   const handleCheck = () => {
     const trimmed = address.trim();
@@ -99,11 +132,10 @@ const Index = () => {
             <Button
               variant="hero-outline"
               className="w-full"
-              onClick={() => {
-                alert("Phantom wallet connection coming soon! For now, paste your address above.");
-              }}
+              onClick={handleConnectPhantom}
+              disabled={connectingWallet}
             >
-              Connect wallet (read‑only)
+              {connectingWallet ? "Connecting…" : "Connect wallet (read‑only)"}
             </Button>
 
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
